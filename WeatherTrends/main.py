@@ -39,6 +39,10 @@ if __name__ == '__main__':
                 date = d[0].split('UTC')[0]
                 temp = [currentDate, d[1], d[2], d[3]]
 
+                # not valid prediction
+                if float(d[1]) < -900:
+                    continue
+
                 if date not in db.keys():
                     db[date] = []
 
@@ -52,11 +56,11 @@ if __name__ == '__main__':
         size = len(goal) - firstindex
         # print(goal)
         rst.append(key+'  '+str(size))
-    print(sorted(rst))
 
-    print(db['2017-03-08'])
+    rst = sorted(rst)
+    print('\n'.join(rst))
 
-
+    print(db['2017-01-29'])
 
     # with open('rst.json', 'w') as outfile:
     #     json.dump(db, outfile, indent=2)
