@@ -65,3 +65,19 @@ if __name__ == '__main__':
     # with open('rst.json', 'w') as outfile:
     #     json.dump(db, outfile, indent=2)
 
+    # calculate temperature difference
+
+    diff = {}
+    for key in db:
+        goal = db[key]
+        accurate = goal[len(goal)-1]
+        _diff = []
+        for val in goal:
+            _diff.append([val[0],
+                          float(val[1]) - float(accurate[1]),
+                          float(val[2]) - float(accurate[2]),
+                          float(val[3]) - float(accurate[3])
+                          ])
+        diff[key] = _diff
+
+    print(diff['2016-04-20'])
