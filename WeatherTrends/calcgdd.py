@@ -14,10 +14,13 @@ from datetime import date
 def getGdd(temp):
     return temp - 50 if temp > 50 else 0;
 
-def calculateGdd():
+def avglist(l):
+    return sum(l) / len(l)
+
+def calculateGdd(hisTempFile, hisSeasonFile, predictTempFolder, predictBudBreakDate):
 
     #  load all csv files
-    csvDir = os.path.dirname(os.path.realpath(__file__)) + '//csv'
+    csvDir = os.path.dirname(os.path.realpath(__file__)) + predictTempFolder
     print('dataDir:', csvDir)
 
     csv_files = [pos_json for pos_json in os.listdir(csvDir) if pos_json.endswith('.csv')]
@@ -81,8 +84,11 @@ def calculateGdd():
 
     predictData.sort(key=lambda x: x[0])
 
+    # print data of current year
+    # print('\n'.join(str(r) for v in predictData for r in v))
+
     # load help file [historical temporal file]
-    helpFileDir = os.path.dirname(os.path.realpath(__file__)) + '//biale//biale_weather_2015.csv'
+    helpFileDir = os.path.dirname(os.path.realpath(__file__)) + hisTempFile
     print('helpFileDir:', helpFileDir)
 
     hisData = []
@@ -91,10 +97,8 @@ def calculateGdd():
         hisData = list(reader)
         hisData = hisData[1:]
 
-    # print(hisData)
-
     # load season aggregation file
-    seasonFile = os.path.dirname(os.path.realpath(__file__)) + '//biale//season_2015.json'
+    seasonFile = os.path.dirname(os.path.realpath(__file__)) + hisSeasonFile
     print('seasonFile:', seasonFile)
 
     season = {}
@@ -107,6 +111,10 @@ def calculateGdd():
     gdd_s2 = 0
     gdd_s3 = 0
 
+    temp_s1 = []
+    temp_s2 = []
+    temp_s3 = []
+
     # calculate gdd
 
     for val in hisData:
@@ -115,20 +123,26 @@ def calculateGdd():
 
         if season['s1'][0] <= date <= season['s1'][1]:
             gdd_s1 += getGdd(temp)
+            temp_s1.append(temp)
         if season['s2'][0] <= date <= season['s2'][1]:
             gdd_s2 += getGdd(temp)
+            temp_s2.append(temp)
         if season['s3'][0] <= date <= season['s3'][1]:
             gdd_s3 += getGdd(temp)
+            temp_s3.append(temp)
 
     # print('gdd_s1', gdd_s1, 'gdd_s2', gdd_s2, 'gdd_s3', gdd_s3)
 
     # predict new season
 
     # specify start date
-    startDate = '2016-03-01'
+    # startDate = '2016-03-01'
+    startDate = predictBudBreakDate
+    print("start date of predicted year:", startDate)
 
     currSeason = 1
     gdd = [0, gdd_s1, gdd_s2, gdd_s3]
+    avgtemp_curr = [0,[],[],[]]
     sum = 0
     milestone = [startDate]
     predictedGdd = []
@@ -138,10 +152,12 @@ def calculateGdd():
             continue
         temp = float(data[1])
         sum += getGdd(temp)
+        avgtemp_curr[currSeason].append(temp);
 
         if sum >= gdd[currSeason]:
             milestone.append(data[0])
             milestone.append(predictData[idx+1][0])
+
             currSeason += 1
             predictedGdd.append(int(round(sum)))
             sum = 0
@@ -177,14 +193,24 @@ def calculateGdd():
                                   season['s3'][1],
                                   season['s4'][0]]
     rst['historical']['gdd'] = [int(round(gdd_s1)), int(round(gdd_s2)), int(round(gdd_s3))]
+    rst['historical']['avgtemp'] = [avglist(temp_s1), avglist(temp_s2), avglist(temp_s3)]
 
     rst['predicted'] = {}
     rst['predicted']['dates'] = milestone
     rst['predicted']['gdd'] = predictedGdd
+    rst['predicted']['avgtemp'] = [avglist(avgtemp_curr[1]), avglist(avgtemp_curr[2]), avglist(avgtemp_curr[3])]
 
     return rst
 
 
 if __name__ == '__main__':
 
-    print(calculateGdd())
+    hisTempFile = '//biale//biale_weather_2015.csv'
+    hisSeasonFile = '//biale//season_2015_bigranch.json'
+    predictTempFolder = '//csv'
+    predictBudBreakDate = '2016-03-19'
+
+    rst = calculateGdd(hisTempFile, hisSeasonFile, predictTempFolder, predictBudBreakDate)
+    # print(rst['historical']['dates'])
+    # print(rst['predicted']['dates'])
+    print(rst)
